@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="tr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Library Loan Management System</a> &gt; <a href="index.source.html" class="el_package">com.svv.library</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">package com.svv.library;
+
+import com.svv.library.model.Book;
+import com.svv.library.model.Loan;
+import com.svv.library.model.Member;
+import com.svv.library.model.MemberType;
+import com.svv.library.service.LibraryService;
+import com.svv.library.service.LoanRefusedException;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+/** Small console demo that walks through a typical scenario (no GUI / database needed). */
+<span class="nc" id="L14">public class Main {</span>
+
+    public static void main(String[] args) {
+<span class="nc" id="L17">        LibraryService library = new LibraryService();</span>
+<span class="nc" id="L18">        library.registerMember(new Member(&quot;M0001&quot;, &quot;Ayse Yilmaz&quot;, MemberType.STUDENT));</span>
+<span class="nc" id="L19">        library.addBook(new Book(&quot;978-0-306-40615-7&quot;, &quot;Software Testing Basics&quot;, 2));</span>
+
+<span class="nc" id="L21">        LocalDate day1 = LocalDate.of(2026, 11, 2);</span>
+<span class="nc" id="L22">        Loan loan = library.borrowBook(&quot;M0001&quot;, &quot;9780306406157&quot;, day1);</span>
+<span class="nc" id="L23">        System.out.println(&quot;Borrowed: &quot; + loan.getBook().getTitle() + &quot;, due &quot; + loan.getDueDate());</span>
+
+<span class="nc" id="L25">        BigDecimal fine = library.returnBook(loan, loan.getDueDate().plusDays(10));</span>
+<span class="nc" id="L26">        System.out.println(&quot;Returned 10 days late, fine = &quot; + fine + &quot; TL&quot;);</span>
+
+        try {
+<span class="nc" id="L29">            library.borrowBook(&quot;M0001&quot;, &quot;9780306406157&quot;, day1.plusDays(30));</span>
+<span class="nc" id="L30">        } catch (LoanRefusedException e) {</span>
+<span class="nc" id="L31">            System.out.println(&quot;Second borrow refused: &quot; + e.getReason());</span>
+<span class="nc" id="L32">        }</span>
+
+<span class="nc" id="L34">        library.payFine(&quot;M0001&quot;, fine);</span>
+<span class="nc" id="L35">        System.out.println(&quot;After payment, balance = &quot;</span>
+<span class="nc" id="L36">                + library.findMember(&quot;M0001&quot;).getOutstandingFine() + &quot; TL&quot;);</span>
+<span class="nc" id="L37">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

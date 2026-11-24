@@ -1,0 +1,53 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.svv:library-loan-system >---------------------
+[INFO] Building Library Loan Management System 1.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ library-loan-system ---
+[INFO] argLine set to -javaagent:C:\\Users\\Berke\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\Berke\\Desktop\\Svv\\library-loan-system\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ library-loan-system ---
+[INFO] skip non existing resourceDirectory C:\Users\Berke\Desktop\Svv\library-loan-system\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ library-loan-system ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ library-loan-system ---
+[INFO] skip non existing resourceDirectory C:\Users\Berke\Desktop\Svv\library-loan-system\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ library-loan-system ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ library-loan-system ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.svv.library.model.MemberTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.svv.library.model.MemberTest
+[INFO] Running com.svv.library.service.BorrowDecisionTableTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.161 s -- in com.svv.library.service.BorrowDecisionTableTest
+[INFO] Running com.svv.library.service.FineCalculatorTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.svv.library.service.FineCalculatorTest
+[INFO] Running com.svv.library.service.FinePaymentTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.svv.library.service.FinePaymentTest
+[INFO] Running com.svv.library.service.ReturnAndRenewTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.svv.library.service.ReturnAndRenewTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ library-loan-system ---
+[INFO] Loading execution data file C:\Users\Berke\Desktop\Svv\library-loan-system\target\jacoco.exec
+[INFO] Analyzed bundle 'Library Loan Management System' with 11 classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.505 s
+[INFO] Finished at: 2026-11-23T18:01:26+03:00
+[INFO] ------------------------------------------------------------------------

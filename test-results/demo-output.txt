@@ -1,0 +1,4 @@
+Borrowed: Software Testing Basics, due 2026-11-16
+Returned 10 days late, fine = 13.00 TL
+Second borrow refused: UNPAID_FINES
+After payment, balance = 0.00 TL

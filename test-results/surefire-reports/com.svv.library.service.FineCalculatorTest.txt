@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.svv.library.service.FineCalculatorTest
+-------------------------------------------------------------------------------
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in com.svv.library.service.FineCalculatorTest

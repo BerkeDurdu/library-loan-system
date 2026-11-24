@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="tr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LibraryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Library Loan Management System</a> &gt; <a href="index.source.html" class="el_package">com.svv.library.service</a> &gt; <span class="el_source">LibraryService.java</span></div><h1>LibraryService.java</h1><pre class="source lang-java linenums">package com.svv.library.service;
+
+import com.svv.library.model.Book;
+import com.svv.library.model.Loan;
+import com.svv.library.model.Member;
+import com.svv.library.model.Money;
+import com.svv.library.util.IsbnValidator;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+/**
+ * Main business logic: registration, borrowing, returning, renewing and paying fines.
+ * Dates are always passed in as parameters (instead of LocalDate.now()) so the tests can control time.
+ */
+public class LibraryService {
+
+    /** A member owing this amount or more cannot borrow or renew (FR-03, FR-07). */
+<span class="fc" id="L26">    public static final BigDecimal FINE_BLOCK_LIMIT = Money.of(&quot;10.00&quot;);</span>
+    public static final int MAX_RENEWALS = 2;
+
+<span class="fc" id="L29">    private final Map&lt;String, Member&gt; members = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L30">    private final Map&lt;String, Book&gt; books = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L31">    private final List&lt;Loan&gt; loans = new ArrayList&lt;&gt;();</span>
+    private final FineCalculator fineCalculator;
+
+    public LibraryService() {
+<span class="fc" id="L35">        this(new FineCalculator());</span>
+<span class="fc" id="L36">    }</span>
+
+<span class="fc" id="L38">    public LibraryService(FineCalculator fineCalculator) {</span>
+<span class="fc" id="L39">        this.fineCalculator = fineCalculator;</span>
+<span class="fc" id="L40">    }</span>
+
+    // ---------------------------------------------------------------- FR-01 / FR-02 registration
+
+    public void registerMember(Member member) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (members.containsKey(member.getId())) {</span>
+<span class="fc" id="L46">            throw new IllegalArgumentException(&quot;Member already registered: &quot; + member.getId());</span>
+        }
+<span class="fc" id="L48">        members.put(member.getId(), member);</span>
+<span class="fc" id="L49">    }</span>
+
+    public void addBook(Book book) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (books.containsKey(book.getIsbn())) {</span>
+<span class="fc" id="L53">            throw new IllegalArgumentException(&quot;Book already in catalogue: &quot; + book.getIsbn());</span>
+        }
+<span class="fc" id="L55">        books.put(book.getIsbn(), book);</span>
+<span class="fc" id="L56">    }</span>
+
+    public Member findMember(String memberId) {
+<span class="fc" id="L59">        Member member = members.get(memberId);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (member == null) {</span>
+<span class="fc" id="L61">            throw new NoSuchElementException(&quot;Unknown member: &quot; + memberId);</span>
+        }
+<span class="fc" id="L63">        return member;</span>
+    }
+
+    public Book findBook(String isbn) {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        Book book = isbn == null ? null : books.get(IsbnValidator.normalize(isbn));</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (book == null) {</span>
+<span class="fc" id="L69">            throw new NoSuchElementException(&quot;Unknown book: &quot; + isbn);</span>
+        }
+<span class="fc" id="L71">        return book;</span>
+    }
+
+    public List&lt;Loan&gt; getActiveLoans(String memberId) {
+<span class="fc" id="L75">        List&lt;Loan&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (Loan loan : loans) {</span>
+<span class="fc bfc" id="L77" title="All 4 branches covered.">            if (!loan.isReturned() &amp;&amp; loan.getMember().getId().equals(memberId)) {</span>
+<span class="fc" id="L78">                result.add(loan);</span>
+            }
+<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">        return Collections.unmodifiableList(result);</span>
+    }
+
+    // ---------------------------------------------------------------- FR-03 / FR-04 borrowing
+
+    /**
+     * Borrow decision table, rules are checked in this order:
+     * inactive member -&gt; unpaid fines -&gt; loan limit -&gt; no copy -&gt; same book already borrowed.
+     */
+    public Loan borrowBook(String memberId, String isbn, LocalDate date) {
+<span class="fc" id="L91">        requireDate(date);</span>
+<span class="fc" id="L92">        Member member = findMember(memberId);</span>
+<span class="fc" id="L93">        Book book = findBook(isbn);</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (!member.isActive()) {</span>
+<span class="fc" id="L96">            throw new LoanRefusedException(RefusalReason.MEMBER_INACTIVE);</span>
+        }
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (isBlockedByFines(member)) {</span>
+<span class="fc" id="L99">            throw new LoanRefusedException(RefusalReason.UNPAID_FINES);</span>
+        }
+<span class="fc" id="L101">        List&lt;Loan&gt; active = getActiveLoans(memberId);</span>
+        // fix D3: the limit is reached when size == max (was &quot;size &gt; max&quot;, allowing one extra loan)
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (active.size() &gt;= member.getType().getMaxActiveLoans()) {</span>
+<span class="fc" id="L104">            throw new LoanRefusedException(RefusalReason.LOAN_LIMIT_REACHED);</span>
+        }
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (!book.hasAvailableCopy()) {</span>
+<span class="fc" id="L107">            throw new LoanRefusedException(RefusalReason.NO_COPY_AVAILABLE);</span>
+        }
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (Loan loan : active) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (loan.getBook().getIsbn().equals(book.getIsbn())) {</span>
+<span class="fc" id="L111">                throw new LoanRefusedException(RefusalReason.ALREADY_BORROWED);</span>
+            }
+<span class="fc" id="L113">        }</span>
+<span class="fc" id="L114">        Loan loan = Loan.open(member, book, date);</span>
+<span class="fc" id="L115">        loans.add(loan);</span>
+<span class="fc" id="L116">        return loan;</span>
+    }
+
+    // ---------------------------------------------------------------- FR-05 returning
+
+    /** Returns the book and charges the late fine. Returns the fine of this loan. */
+    public BigDecimal returnBook(Loan loan, LocalDate returnDate) {
+<span class="fc" id="L123">        requireDate(returnDate);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (loan.isReturned()) {</span>
+<span class="fc" id="L125">            throw new IllegalStateException(&quot;Loan has already been returned&quot;);</span>
+        }
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (returnDate.isBefore(loan.getBorrowDate())) {</span>
+<span class="fc" id="L128">            throw new IllegalArgumentException(&quot;Return date cannot be before the borrow date&quot;);</span>
+        }
+<span class="fc" id="L130">        long daysLate = Math.max(0, ChronoUnit.DAYS.between(loan.getDueDate(), returnDate));</span>
+<span class="fc" id="L131">        BigDecimal fine = fineCalculator.calculateFine(daysLate);</span>
+<span class="fc" id="L132">        loan.close(returnDate, fine);</span>
+<span class="fc" id="L133">        return fine;</span>
+    }
+
+    // ---------------------------------------------------------------- FR-07 renewing
+
+    /** Renewal decision table: returned? -&gt; overdue? -&gt; renew limit -&gt; unpaid fines. */
+    public void renewLoan(Loan loan, LocalDate date) {
+<span class="fc" id="L140">        requireDate(date);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (loan.isReturned()) {</span>
+<span class="fc" id="L142">            throw new IllegalStateException(&quot;A returned loan cannot be renewed&quot;);</span>
+        }
+        // fix D5: renewing ON the due date is allowed, only dates after it are overdue
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (date.isAfter(loan.getDueDate())) {</span>
+<span class="fc" id="L146">            throw new LoanRefusedException(RefusalReason.LOAN_OVERDUE);</span>
+        }
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (loan.getRenewCount() &gt;= MAX_RENEWALS) {</span>
+<span class="fc" id="L149">            throw new LoanRefusedException(RefusalReason.RENEWAL_LIMIT_REACHED);</span>
+        }
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (isBlockedByFines(loan.getMember())) {</span>
+<span class="fc" id="L152">            throw new LoanRefusedException(RefusalReason.UNPAID_FINES);</span>
+        }
+<span class="fc" id="L154">        loan.extend();</span>
+<span class="fc" id="L155">    }</span>
+
+    // ---------------------------------------------------------------- FR-08 paying fines
+
+    public void payFine(String memberId, BigDecimal amount) {
+<span class="fc" id="L160">        Member member = findMember(memberId);</span>
+<span class="fc bfc" id="L161" title="All 4 branches covered.">        if (amount == null || amount.signum() &lt;= 0) {</span>
+<span class="fc" id="L162">            throw new IllegalArgumentException(&quot;Payment must be greater than zero&quot;);</span>
+        }
+        // fix D7: a payment larger than the debt would make the balance negative
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (amount.compareTo(member.getOutstandingFine()) &gt; 0) {</span>
+<span class="fc" id="L166">            throw new IllegalArgumentException(&quot;Payment is larger than the outstanding fine&quot;);</span>
+        }
+<span class="fc" id="L168">        Loan.applyPayment(member, Money.of(amount));</span>
+<span class="fc" id="L169">    }</span>
+
+    /**
+     * fix D4: one shared rule for borrow AND renew. Borrow used &quot;&gt; 10&quot; while renew used &quot;&gt;= 10&quot;;
+     * the requirement says a member owing 10.00 TL or more is blocked.
+     */
+    private static boolean isBlockedByFines(Member member) {
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        return member.getOutstandingFine().compareTo(FINE_BLOCK_LIMIT) &gt;= 0;</span>
+    }
+
+    private static void requireDate(LocalDate date) {
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (date == null) {</span>
+<span class="fc" id="L181">            throw new IllegalArgumentException(&quot;Date must not be null&quot;);</span>
+        }
+<span class="fc" id="L183">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
